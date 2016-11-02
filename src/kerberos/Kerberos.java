@@ -138,34 +138,27 @@ public class Kerberos {
         return hash;
     }
     
-    private void generate_hash() {         
-        FileReader fr = null;
+    private void generate_hash() { 
+        FileWriter fichero = null;
+        PrintWriter pw = null;
+        
+        alf = new ArrayList<>();
+        hashalf = new ArrayList<>();
         try {
-            alf = new ArrayList<>();
-            hashalf = new ArrayList<>();
-            File archivo = new File ("hash.txt");
-            fr = new FileReader (archivo);
-            BufferedReader br = new BufferedReader(fr);
-            String linea;
-            while((linea=br.readLine())!=null){
-                System.out.println(linea);
-                for (int i = 0; i < linea.length(); i++) {
-                    hashalf.add(linea.charAt(i));
-                }
-            }  for (int i = 0; i < hashalf.size(); i++) {
-                System.out.println(hashalf.get(i));
-                
+            fichero = new FileWriter("hash.txt");
+            pw = new PrintWriter(fichero);
+            for (int i = 33; i < 126; i++){ 
+                alf.add((char) i);
+                hashalf.add((char) i);
             }
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(Kerberos.class.getName()).log(Level.SEVERE, null, ex);
+            Collections.shuffle(hashalf);
+            for (int i = 0; i < hashalf.size(); i++) 
+                pw.write(hashalf.get(i));
+            
+            if (null != fichero) 
+                fichero.close();
         } catch (IOException ex) {
             Logger.getLogger(Kerberos.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            try {
-                fr.close();
-            } catch (IOException ex) {
-                Logger.getLogger(Kerberos.class.getName()).log(Level.SEVERE, null, ex);
-            }
         }
     }
     
