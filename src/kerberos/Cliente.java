@@ -29,7 +29,7 @@ public class Cliente {
     ArrayList<Character> hashalf = new ArrayList<>();
     ArrayList<Character> alf = new ArrayList<>();
     String nombre;
-    String pass, letra, clientTGS, primero, segundo, ticket, ticket1, ticket2, idcliente, idcliente2, TGSdecif, TGSdecifCod;
+    String pass, letra, clientTGS, primero, segundo, ticket, ticket1, ticket2, idcliente, idcliente2, TGSdecif, TGSdecifCod, clave_ser, client_serverSK, client_serverSK2, client_serverSK3, idCServer, idCServer2, CS_H, CS_H2, CS_H3;
     
     
     public Cliente(){
@@ -41,26 +41,25 @@ public class Cliente {
             in=new DataInputStream(_socket.getInputStream());
             BufferedReader leer= new BufferedReader(new InputStreamReader(System.in));
             
-//Parte 1,2 y 3
+
             System.out.println("Ingrese nombre de usuario: ");
             nombre= leer.readLine();
             out.writeUTF(nombre);
             System.out.println("Ingrese Password: ");
             pass = leer.readLine();
-            primero= this.codePass(pass);
+            //primero= this.codePass(pass);
             //System.out.println("Se codifico en: "+primero);
-            segundo= this.encrypt(primero, pass);
-            System.out.println("Password encryptada: "+segundo);
+            //segundo= this.encrypt(primero, pass);
+            //System.out.println("Password encryptada: "+segundo);
            
             
-// guardar en el arraylist hashalf el archivo
          archivo = new File ("hash.txt");
          fr = new FileReader (archivo);
          br = new BufferedReader(fr);
 
          String linea;
          while((linea=br.readLine())!=null){
-            System.out.println(linea);
+           // System.out.println(linea);
             for (int i = 0; i < linea.length(); i++) {
                 hashalf.add(linea.charAt(i));
             }
@@ -68,34 +67,77 @@ public class Cliente {
           for (int i = 33; i < 126; i++){ 
                 alf.add((char) i);
             }
-            for (int i = 0; i < alf.size(); i++) {
-                System.out.println(alf.get(i));
-            }
+           
             
             System.out.println("Solicitud de servicio");
 
     //Mensaje A, descifrar la clave
-        clientTGS = in.readUTF();
+            System.out.println("");
+            System.out.println("----------------------------**Primer mensaje recibido Client/TGS session key**");
+            
+            clientTGS = in.readUTF();
             System.out.println("Mensaje A recibido es: "+clientTGS);
             TGSdecif =this.desencrypt(clientTGS, pass);
             TGSdecifCod = this.decodePass(TGSdecif);
             System.out.println("La clave desifrada es: "+TGSdecifCod);
    //Mensaje B
+        System.out.println("");
+        System.out.println("----------------------------**   Segundo mensaje recibido Ticket-Granting Ticket**");
         ticket = in.readUTF();    
         System.out.println("Mensaje B: Ticket-Granting Ticket: "+ticket);
    //Mensaje c
+        System.out.println("");
+        System.out.println("----------------------------**   Primer mensaje enviado: Ticket-Granting Ticket**");
         out.writeUTF(ticket);
         System.out.println("Enviado mensaje compuesto por Ticket-Granting Ticket y solicitud del servicio: "+ticket);
                
    //Mensaje d
+        System.out.println("");
+        System.out.println("----------------------------**   Segundo mensaje enviado: Id del cliente **");
         idcliente = this.codePass(nombre);
-        idcliente2 = this.encrypt(idcliente, nombre);
+        idcliente2 = this.encrypt(idcliente, TGSdecifCod);
         out.writeUTF(idcliente2);
-            System.out.println("ID cliente codificado: "+idcliente2);
+            System.out.println("ID cliente encriptado: "+idcliente2);
+        
+    //Mensaje F
+        System.out.println("----------------------------**   Tercer mensaje recibido Client/server session key**");
+        System.out.println("");
+        client_serverSK= in.readUTF();
+        System.out.println("Mensaje F recibido es: "+client_serverSK);
+        client_serverSK2=this.desencrypt(client_serverSK, TGSdecifCod);
+        client_serverSK3= this.decodePass(client_serverSK2);
+         System.out.println("La clave desifrada Client/server session key es: "+client_serverSK3);
+        
+        
+   //Mensaje E
+        System.out.println("");
+        System.out.println("----------------------------**   Cuarto mensaje recibido Client-to-server ticket**");
+       clave_ser=  in.readUTF();
+            System.out.println("Client-to-server ticket recibido: "+clave_ser);
+   //Mensaje envia E
+   System.out.println("----------------------------**   Tercer mensaje enviadodo Client-to-server ticket**");
+        out.writeUTF(clave_ser);
+   //Mensaje G
+            System.out.println("");
+            System.out.println("----------------------------**   Cuarto mensaje enviado ID cliente encriptado con client/server session key**");
+           idCServer = this.codePass(nombre);
+           idCServer2 = this.encrypt(idCServer, client_serverSK3);
+           out.writeUTF(idCServer2);
+           System.out.println("ID cliente encriptado con client/server session key: "+idCServer2);
    
+   //Mensaje H
+            System.out.println("");
+            CS_H= in.readUTF();
+            CS_H2=this.desencrypt(CS_H, client_serverSK3);
+            CS_H3= this.decodePass(CS_H2);
+            System.out.println("Confirmacion desifrada usando client/server session key: "+CS_H3);
+  
+        
+        
         } catch (IOException ex) {
             Logger.getLogger(Cliente.class.getName()).log(Level.SEVERE, null, ex);
         }
+    
     
     }
     
@@ -165,41 +207,8 @@ public class Cliente {
         System.out.println("El mensaje es: " +pass+". Se codifico a: "+hash);
         return hash;
     }
-  /* private String leer_arch(String a){
-        
-      File archivo = null;
-      FileReader fr = null;
-      BufferedReader br = null;
-       int i=0;
-      try {
-         archivo = new File ("hash.txt");
-         fr = new FileReader (archivo);
-         br = new BufferedReader(fr);
-         String linea;
-         while((linea=br.readLine())!=null){
-             //-----
-             
-             
-             System.out.println(linea)   ;
-         
-         }
-      }
-      catch(Exception e){
-         e.printStackTrace();
-      }finally{
-         // En el finally cerramos el fichero, para asegurarnos
-         // que se cierra tanto si todo va bien como si salta 
-         // una excepcion.
-         try{                    
-            if( null != fr ){   
-               fr.close();     
-            }                  
-         }catch (Exception e2){ 
-            e2.printStackTrace();
-         }
-      }
-        return n;
-    }*/
+  
+
 public static void main(String[] args) {
     Cliente obj= new Cliente();
    
