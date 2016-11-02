@@ -122,6 +122,20 @@ public class Kerberos {
         return hash;
     }
     
+    private String decodePass(String pass) {
+        String hash="";
+        for (int i = 0; i < pass.length(); i++) {
+            char c=pass.charAt(i);
+            for (int j = 0; j < alf.size(); j++) 
+                if(hashalf.get(j).compareTo(c)==0){
+                    hash+=alf.get(j);
+                    break;
+                }
+        }
+        System.out.println("El mensaje es: " +pass+". Se codifico a: "+hash);
+        return hash;
+    }
+    
     private void generate_hash() { 
         FileWriter fichero = null;
         PrintWriter pw = null;
