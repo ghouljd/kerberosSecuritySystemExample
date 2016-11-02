@@ -5,7 +5,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,11 +28,11 @@ public class Kerberos {
         try {    
             connect = new Socket[NM];
             server= new ServerSocket(PORT);
-            System.out.println("servidor esperando");
+            System.out.println("Estoy esperando por clientes.");
             thread hilo[]= new thread[NM];
             while(i<NM){
                 connect[i]=server.accept();
-                System.out.println("conectado cliente "+connect[i].getInetAddress());
+                System.out.println("Conectado cliente "+connect[i].getInetAddress());
                 hilo[i]=new thread(connect[i]);
                 hilo[i].start();
                 i++;
@@ -106,7 +105,8 @@ public class Kerberos {
                         message=desencrypt(message, auxs);
                         message=decodePass(message);
                         if(message.compareTo(aux[0])==0 && aux[2].compareTo(auxs)==0){
-                            message=encrypt(decodePass("Soy el SS y te estoy prestando el servicio."), auxs);
+                            System.out.println("Ticket SS valido");
+                            message=encrypt(codePass("Soy el SS y te estoy prestando el servicio."), auxs);
                             out.writeUTF(message);
                             System.out.println("Se esta prestando el servicio.");
                         }else{
