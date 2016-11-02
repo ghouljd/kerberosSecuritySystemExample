@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 
 public class Cliente {
     private static final int PORT = 20005;
-    private static final String IP = "192.168.0.106"; //192.168.0.106
+    private static final String IP = "localhost"; //192.168.0.106
     Socket _socket;
     DataOutputStream out;
     DataInputStream in;
@@ -117,6 +117,7 @@ public class Cliente {
    //Mensaje envia E
    System.out.println("----------------------------**   Tercer mensaje enviadodo Client-to-server ticket**");
         out.writeUTF(clave_ser);
+            System.out.println("Client-to-server enviado: "+clave_ser);
    //Mensaje G
             System.out.println("");
             System.out.println("----------------------------**   Cuarto mensaje enviado ID cliente encriptado con client/server session key**");
