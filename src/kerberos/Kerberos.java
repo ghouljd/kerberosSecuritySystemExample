@@ -84,20 +84,28 @@ public class Kerberos {
         }
     }
 
-    private String encrypt(String codePass,String passUser){
-        byte[] binpass= codePass.getBytes();
-        byte[] binuser= passUser.getBytes(),res= new byte[binpass.length];
-        for (int i = 0; i < binpass.length; i++){
-            binpass[i]=(byte) ~binpass[i];
-            if(i<binpass.length && i<binuser.length)
-                res[i]=(byte) (binpass[i]^binuser[i]);
-            else{
-                int j=binuser.length-1;
-                res[i]=(byte) (binpass[i]^binuser[j]);
-            }
+    private String encrypt(String message,String pass){
+        int aux=0;String enc="";
+        for (int i = 0; i < pass.length(); i++) 
+            aux+=pass.codePointAt(i);
+        aux/=100;
+        for (int i = 0; i < message.length(); i++) {
+            int c=message.charAt(i);
+            enc+=(char)(c+aux);
         }
-        System.out.println("Se encripto en: "+res.toString());
-        return res.toString();
+        return enc;
+    }
+    
+    private String desencrypt(String codePass,String passUser){
+        int aux=0;String enc="";
+        for (int i = 0; i < passUser.length(); i++) 
+            aux+=passUser.codePointAt(i);
+        aux/=100;
+        for (int i = 0; i < codePass.length(); i++) {
+            int c=codePass.charAt(i);
+            enc+=(char)(c-aux);
+        }
+        return enc;
     }
     
     private String codePass(String pass) {
@@ -110,7 +118,7 @@ public class Kerberos {
                     break;
                 }
         }
-        System.out.println("El pass es: " +pass+". Se codifico a: "+hash);
+        System.out.println("El mensaje es: " +pass+". Se codifico a: "+hash);
         return hash;
     }
     
