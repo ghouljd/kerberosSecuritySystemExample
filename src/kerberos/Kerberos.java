@@ -16,8 +16,9 @@ public class Kerberos {
     Socket connect[];
     ArrayList<Character> alf,hashalf;
     private ArrayList<String> user=new ArrayList<>(Arrays.asList("jesus", "angelica"));
-    private ArrayList<String> pass=new ArrayList<>(Arrays.asList("1234", "5678"));
-    private final String passTGS = "14m7G5";
+    private ArrayList<String> pass=new ArrayList<>(Arrays.asList("012356", "567890"));
+    private final String passTGSpub = "14m7G5";
+    private final String passTGSpri = "5G7m41";
     
     public Kerberos(){
         int i=0;
@@ -59,14 +60,22 @@ public class Kerberos {
             int usernumber=0;
             try {
                 String message= in.readUTF();
+                System.out.println(message);
                 for (int i = 0; i < user.size(); i++)
-                    if(message==user.get(i)){
+                    if(message.compareTo(user.get(i))==0){
                         flag=true;
                         usernumber=i;
                         System.out.println("Usuario valido: "+message);
+                        break;
                     }
                 if(flag){
-                    encrypt(codePass(passTGS),pass.get(usernumber));
+                    message=encrypt(codePass(passTGSpub),pass.get(usernumber));
+                    out.writeUTF(message);
+                    System.out.println("Se envio el mensaje con la clave publica del TGS, encriptado asi: "+message);
+                    message=user.get(usernumber)+","+_socket.getInetAddress()+","+passTGSpub;
+                    message=encrypt(codePass(message),passTGSpri);
+                    out.writeUTF(message);
+                    System.out.println("Se envio el ticket cifrado con la clave privada del TGS, encriptado asi: "+message);
                 }else
                     System.out.println("Usuario no valido: "+message + ". Se rechazo la solicitud");
             } catch (IOException ex) {
@@ -75,17 +84,20 @@ public class Kerberos {
         }
     }
 
-    private void encrypt(String codePass,String passUser) {
+    private String encrypt(String codePass,String passUser){
         byte[] binpass= codePass.getBytes();
-        for (int i = 0; i < binpass.length; i++) 
-            System.out.print(binpass[i]);
-        System.out.println("");
-        for (int i = 0; i < binpass.length; i++)
+        byte[] binuser= passUser.getBytes(),res= new byte[binpass.length];
+        for (int i = 0; i < binpass.length; i++){
             binpass[i]=(byte) ~binpass[i];
-        for (int i = 0; i < binpass.length; i++) 
-            System.out.print(binpass[i]);
-        String a=binpass.toString();
-        System.out.println("Se encripto en: "+a);
+            if(i<binpass.length && i<binuser.length)
+                res[i]=(byte) (binpass[i]^binuser[i]);
+            else{
+                int j=binuser.length-1;
+                res[i]=(byte) (binpass[i]^binuser[j]);
+            }
+        }
+        System.out.println("Se encripto en: "+res.toString());
+        return res.toString();
     }
     
     private String codePass(String pass) {
@@ -93,12 +105,12 @@ public class Kerberos {
         for (int i = 0; i < pass.length(); i++) {
             char c=pass.charAt(i);
             for (int j = 0; j < alf.size(); j++) 
-                if(c==alf.get(i)){
-                    hash+=hashalf.get(i);
+                if(alf.get(j).compareTo(c)==0){
+                    hash+=hashalf.get(j);
                     break;
                 }
         }
-        System.out.println("El pass del usuario es: " +pass+". Se codifico a: "+hash);
+        System.out.println("El pass es: " +pass+". Se codifico a: "+hash);
         return hash;
     }
     
