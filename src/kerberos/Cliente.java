@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 
 public class Cliente {
     private static final int PORT = 20005;
-    private static final String IP = "192.168.0.106";
+    private static final String IP = "localhost"; //192.168.0.106
     Socket _socket;
     DataOutputStream out;
     DataInputStream in;
@@ -29,9 +29,12 @@ public class Cliente {
     ArrayList<Character> hashalf = new ArrayList<>();
     ArrayList<Character> alf = new ArrayList<>();
     String nombre;
-    String pass, letra;
+    String pass, letra, clientTGS, primero, segundo, ticket, ticket1, ticket2, idcliente, idcliente2;
+    
     
     public Cliente(){
+        
+           
         try {
             _socket = new Socket( InetAddress.getByName( IP ), PORT );
             out=new DataOutputStream(_socket.getOutputStream());
@@ -44,9 +47,15 @@ public class Cliente {
             out.writeUTF(nombre);
             System.out.println("Ingrese Password: ");
             pass = leer.readLine();
+            primero= this.codePass(pass);
+            //System.out.println("Se codifico en: "+primero);
+            segundo= this.encrypt(primero, pass);
+            System.out.println("Se encrypto en: "+segundo);
+            byte [] bina= segundo.getBytes();
+            System.out.println("Binario: "+bina);
             
 // guardar en el arraylist hashalf el archivo
-             archivo = new File ("hash.txt");
+         archivo = new File ("hash.txt");
          fr = new FileReader (archivo);
          br = new BufferedReader(fr);
 
@@ -57,37 +66,84 @@ public class Cliente {
                 hashalf.add(linea.charAt(i));
             }
          }
-            for (int i = 0; i < hashalf.size(); i++) {
-                System.out.println(hashalf.get(i));
-                
+          for (int i = 33; i < 126; i++){ 
+                alf.add((char) i);
             }
-               
-
-         
-            System.out.println("Solicitud de servicio");
-//Parte 4
-        
+            for (int i = 0; i < alf.size(); i++) {
+                System.out.println(alf.get(i));
+            }
             
+            System.out.println("Solicitud de servicio");
+
+    //Mensaje A, descifrar la clave
+        clientTGS = in.readUTF();
+            System.out.println("Mensaje A: "+clientTGS);
+            
+   //Mensaje B
+        ticket = in.readUTF();    
+        System.out.println("Mensaje B: "+ticket);
+   //Mensaje c
+        out.writeUTF(ticket);
+        System.out.println("Enviado mensaje compuesto por Ticket-Granting Ticket y solicitud del servicio: "+ticket);
+               
+   //Mensaje d
+        idcliente = this.codePass(nombre);
+        idcliente2 = this.encrypt(idcliente, nombre);
+        out.writeUTF(idcliente2);
+            System.out.println("ID cliente codificado: "+);
+   
         } catch (IOException ex) {
             Logger.getLogger(Cliente.class.getName()).log(Level.SEVERE, null, ex);
         }
     
     }
     
+    private String encrypt(String codePass,String passUser){
+        byte[] binpass= codePass.getBytes();
+        byte[] binuser= passUser.getBytes(),res= new byte[binpass.length];
+        for (int i = 0; i < binpass.length; i++){
+            binpass[i]=(byte) ~binpass[i];
+            if(i<binpass.length && i<binuser.length)
+                res[i]=(byte) (binpass[i]^binuser[i]);
+            else{
+                int j=binuser.length-1;
+                res[i]=(byte) (binpass[i]^binuser[j]);
+            }
+        }
+        System.out.println("Se encripto en: "+res.toString());
+        return res.toString();
+    }
+    
     private String codePass(String pass) {
         String hash="";
         for (int i = 0; i < pass.length(); i++) {
             char c=pass.charAt(i);
-            for (int j = 0; j < alf.size(); j++) {
-                if(c==alf.get(i)){
-                    hash+=hashalf.get(i);
+            for (int j = 0; j < alf.size(); j++) 
+                if(alf.get(j).compareTo(c)==0){
+                    hash+=hashalf.get(j);
                     break;
                 }
-            }
-        } 
+        }
+        System.out.println("El pass es: " +pass+". Se codifico a: "+hash);
         return hash;
     } 
     
+    
+    private String InvcodePass(String pass) {
+        String hash="";
+        for (int i = 0; i < pass.length(); i++) {
+            char c=pass.charAt(i);
+            for (int j = 0; j < alf.size(); j++) 
+                if(alf.get(j).compareTo(c)==0){
+                    hash+=hashalf.get(j);
+                    break;
+                }
+        }
+        System.out.println("El pass es: " +pass+". Se codifico a: "+hash);
+        return hash;
+    }
+    
+   
   /* private String leer_arch(String a){
         
       File archivo = null;
