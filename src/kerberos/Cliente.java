@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 
 public class Cliente {
     private static final int PORT = 20005;
-    private static final String IP = "localhost"; //192.168.0.106
+    private static final String IP = "192.168.0.106"; //192.168.0.106
     Socket _socket;
     DataOutputStream out;
     DataInputStream in;
@@ -29,7 +29,7 @@ public class Cliente {
     ArrayList<Character> hashalf = new ArrayList<>();
     ArrayList<Character> alf = new ArrayList<>();
     String nombre;
-    String pass, letra, clientTGS, primero, segundo, ticket, ticket1, ticket2, idcliente, idcliente2;
+    String pass, letra, clientTGS, primero, segundo, ticket, ticket1, ticket2, idcliente, idcliente2, TGSdecif, TGSdecifCod;
     
     
     public Cliente(){
@@ -50,9 +50,8 @@ public class Cliente {
             primero= this.codePass(pass);
             //System.out.println("Se codifico en: "+primero);
             segundo= this.encrypt(primero, pass);
-            System.out.println("Se encrypto en: "+segundo);
-            byte [] bina= segundo.getBytes();
-            System.out.println("Binario: "+bina);
+            System.out.println("Password encryptada: "+segundo);
+           
             
 // guardar en el arraylist hashalf el archivo
          archivo = new File ("hash.txt");
@@ -77,11 +76,13 @@ public class Cliente {
 
     //Mensaje A, descifrar la clave
         clientTGS = in.readUTF();
-            System.out.println("Mensaje A: "+clientTGS);
-            
+            System.out.println("Mensaje A recibido es: "+clientTGS);
+            TGSdecif =this.desencrypt(clientTGS, pass);
+            TGSdecifCod = this.decodePass(TGSdecif);
+            System.out.println("La clave desifrada es: "+TGSdecifCod);
    //Mensaje B
         ticket = in.readUTF();    
-        System.out.println("Mensaje B: "+ticket);
+        System.out.println("Mensaje B: Ticket-Granting Ticket: "+ticket);
    //Mensaje c
         out.writeUTF(ticket);
         System.out.println("Enviado mensaje compuesto por Ticket-Granting Ticket y solicitud del servicio: "+ticket);
@@ -90,7 +91,7 @@ public class Cliente {
         idcliente = this.codePass(nombre);
         idcliente2 = this.encrypt(idcliente, nombre);
         out.writeUTF(idcliente2);
-            System.out.println("ID cliente codificado: "+);
+            System.out.println("ID cliente codificado: "+idcliente2);
    
         } catch (IOException ex) {
             Logger.getLogger(Cliente.class.getName()).log(Level.SEVERE, null, ex);
@@ -98,20 +99,28 @@ public class Cliente {
     
     }
     
-    private String encrypt(String codePass,String passUser){
-        byte[] binpass= codePass.getBytes();
-        byte[] binuser= passUser.getBytes(),res= new byte[binpass.length];
-        for (int i = 0; i < binpass.length; i++){
-            binpass[i]=(byte) ~binpass[i];
-            if(i<binpass.length && i<binuser.length)
-                res[i]=(byte) (binpass[i]^binuser[i]);
-            else{
-                int j=binuser.length-1;
-                res[i]=(byte) (binpass[i]^binuser[j]);
-            }
+    private String encrypt(String message,String pass){
+        int aux=0;String enc="";
+        for (int i = 0; i < pass.length(); i++) 
+            aux+=pass.codePointAt(i);
+        aux/=100;
+        for (int i = 0; i < message.length(); i++) {
+            int c=message.charAt(i);
+            enc+=(char)(c+aux);
         }
-        System.out.println("Se encripto en: "+res.toString());
-        return res.toString();
+        return enc;
+    }
+    
+    private String desencrypt(String codePass,String passUser){
+        int aux=0;String enc="";
+        for (int i = 0; i < passUser.length(); i++) 
+            aux+=passUser.codePointAt(i);
+        aux/=100;
+        for (int i = 0; i < codePass.length(); i++) {
+            int c=codePass.charAt(i);
+            enc+=(char)(c-aux);
+        }
+        return enc;
     }
     
     private String codePass(String pass) {
@@ -143,7 +152,19 @@ public class Cliente {
         return hash;
     }
     
-   
+    private String decodePass(String pass) {
+        String hash="";
+        for (int i = 0; i < pass.length(); i++) {
+            char c=pass.charAt(i);
+            for (int j = 0; j < alf.size(); j++) 
+                if(hashalf.get(j).compareTo(c)==0){
+                    hash+=alf.get(j);
+                    break;
+                }
+        }
+        System.out.println("El mensaje es: " +pass+". Se codifico a: "+hash);
+        return hash;
+    }
   /* private String leer_arch(String a){
         
       File archivo = null;
