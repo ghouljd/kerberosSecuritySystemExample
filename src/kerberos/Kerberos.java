@@ -19,6 +19,8 @@ public class Kerberos {
     private ArrayList<String> pass=new ArrayList<>(Arrays.asList("012356", "567890"));
     private final String passTGSpub = "14m7G5";
     private final String passTGSpri = "5G7m41";
+    private final String passSSpub = "14m55";
+    private final String passSSpri = "55m41";
     
     public Kerberos(){
         int i=0;
@@ -56,19 +58,12 @@ public class Kerberos {
         }
         @Override
         public void run(){
-            boolean flag=false;
             int usernumber=0;
             try {
                 String message= in.readUTF();
                 System.out.println(message);
-                for (int i = 0; i < user.size(); i++)
-                    if(message.compareTo(user.get(i))==0){
-                        flag=true;
-                        usernumber=i;
-                        System.out.println("Usuario valido: "+message);
-                        break;
-                    }
-                if(flag){
+                usernumber=verify_user(message);
+                if(usernumber!=-1){
                     message=encrypt(codePass(passTGSpub),pass.get(usernumber));
                     out.writeUTF(message);
                     System.out.println("Se envio el mensaje con la clave publica del TGS, encriptado asi: "+message);
@@ -77,13 +72,68 @@ public class Kerberos {
                     out.writeUTF(message);
                     System.out.println("Se envio el ticket cifrado con la clave privada del TGS, encriptado asi: "+message);
                     message=in.readUTF();
-                    desencrypt(message, passTGSpub);
-                }else
+                    System.out.println("El cliente envia: "+message);
+                    message=desencrypt(message, passTGSpri);
+                    System.out.println("Desencriptando con la clave privada del TGS: "+message);
+                    message=decodePass(message);
+                    System.out.println("Decodificando: "+message);
+                    String aux[]=message.split(",");
+                    message=in.readUTF();
+                    message=desencrypt(message, passTGSpub);
+                    message=decodePass(message);
+                    if(message.compareTo(aux[0])==0 && aux[2].compareTo(passTGSpub)==0){
+                        System.out.println("Ticket valido.");
+                        String auxs="";
+                        for (int i = 0; i < aux[0].length() && i < passTGSpub.length(); i++) {
+                            auxs+=aux[0].charAt(i);
+                            auxs+=passTGSpub.charAt(i);
+                        }
+                        message=encrypt(codePass(auxs), passTGSpub);
+                        System.out.println("Clave cliente/servidor generada: "+auxs+". Se encripto: "+message);
+                        out.writeUTF(message);
+                        message=user.get(usernumber)+","+_socket.getInetAddress()+","+auxs;
+                        message=encrypt(codePass(message),passSSpri);
+                        out.writeUTF(message);
+                        System.out.println("Se envia el ticket para autenticarse frente al SS encriptado: "+message);
+                        message=in.readUTF();
+                        System.out.println("El cliente envia: "+message);
+                        message=desencrypt(message, passSSpri);
+                        System.out.println("Desencriptando con la clave privada del SS: "+message);
+                        message=decodePass(message);
+                        System.out.println("Decodificando: "+message);
+                        aux=message.split(",");
+                        message=in.readUTF();
+                        message=desencrypt(message, auxs);
+                        message=decodePass(message);
+                        if(message.compareTo(aux[0])==0 && aux[2].compareTo(auxs)==0){
+                            message=encrypt(decodePass("Soy el SS y te estoy prestando el servicio."), auxs);
+                            out.writeUTF(message);
+                            System.out.println("Se esta prestando el servicio.");
+                        }else{
+                            System.out.println("Ticket no valido.");
+                            _socket.close();
+                        }
+                    }else{
+                        System.out.println("Ticket no valido.");
+                        _socket.close();
+                    }
+                }else{
                     System.out.println("Usuario no valido: "+message + ". Se rechazo la solicitud");
+                    _socket.close();
+                }
             } catch (IOException ex) {
                 Logger.getLogger(Kerberos.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+    }
+
+    private int verify_user(String nombre) {
+        for (int i = 0; i < user.size(); i++)
+                    if(nombre.compareTo(user.get(i))==0){
+                        System.out.println("Usuario valido: "+nombre);
+                        return i;
+                    }
+        return -1;
     }
 
     private String encrypt(String message,String pass){
@@ -134,7 +184,7 @@ public class Kerberos {
                     break;
                 }
         }
-        System.out.println("El mensaje es: " +pass+". Se codifico a: "+hash);
+        System.out.println("El mensaje es: " +pass+". Se decodifico a: "+hash);
         return hash;
     }
     
