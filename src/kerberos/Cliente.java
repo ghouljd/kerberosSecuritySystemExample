@@ -44,26 +44,24 @@ public class Cliente {
             out.writeUTF(nombre);
             System.out.println("Ingrese Password: ");
             pass = leer.readLine();
-            //Pso 2     -----metodo de encriptacion 
-           /* for(int i=0; i<pass.length();i++){
-               letra =""+pass.charAt(i);
-                for (int j = 0; j < alf.size(); j++) {
-                    if(letra.equals(alf.get(j))){
-                        
-                    }
-                    
-                }
-            }*/
-               fichero = new FileWriter("hash.txt");
-            pw = new PrintWriter(fichero);
-            for (int i = 33; i < 126; i++) 
-                alf.add((char) i);
-            Collections.shuffle(alf);
-            for (int i = 0; i < alf.size(); i++) 
-                pw.write(" " + alf.get(i));
             
-            if (null != fichero) 
-                fichero.close();
+// guardar en el arraylist hashalf el archivo
+             archivo = new File ("hash.txt");
+         fr = new FileReader (archivo);
+         br = new BufferedReader(fr);
+
+         String linea;
+         while((linea=br.readLine())!=null){
+            System.out.println(linea);
+            for (int i = 0; i < linea.length(); i++) {
+                hashalf.add(linea.charAt(i));
+            }
+         }
+            for (int i = 0; i < hashalf.size(); i++) {
+                System.out.println(hashalf.get(i));
+                
+            }
+               
 
          
             System.out.println("Solicitud de servicio");
